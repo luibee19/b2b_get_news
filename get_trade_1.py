@@ -4,29 +4,16 @@ import requests
 from bs4 import BeautifulSoup
 import sqlite3
 import os
+from functions import is_duplicate
+from functions import load_database_cache
 
-# Check if the data already exists in the database cache
-def is_duplicate(cursor, title):
-    cursor.execute("SELECT title FROM news WHERE title = ?", (title,))
-    return cursor.fetchone() is not None
-
-# Load existing data from the database cache
-def load_database_cache():
-    conn = sqlite3.connect('news.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT title FROM news")    
-    cache = set(title[0] for title in cursor.fetchall())
-    #cursor.fetchall() retrieves all the rows returned by the SELECT query as a list of tuples. Each tuple contains the values of the columns in the selected rows.
-    #The expression title[0] for title in cursor.fetchall() is a list comprehension that extracts the first element (index 0) from each tuple in the result. In this case, it extracts the title value from each tuple.
-    conn.close()
-    return cache
-
-conn = sqlite3.connect('news.db')
+database = 'trade.db'
+conn = sqlite3.connect(database)
 cursor = conn.cursor()
 
 # Create a table to store titles if it doesn't exist
 cursor.execute("""
-    CREATE TABLE IF NOT EXISTS news (
+    CREATE TABLE IF NOT EXISTS trade (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
         note TEXT,
@@ -38,7 +25,7 @@ cursor.execute("""
 """)
 
 # Load existing data from the database cache
-database_cache = load_database_cache()
+database_cache = load_database_cache(database)
 #print(f'data cache: {database_cache}')
 
 base_url = 'https://www.vietrade.gov.vn'
@@ -114,12 +101,12 @@ for article in articles:
         'image': image_filename
     })
     
-#print(f'data: {data}\nThere are {len(data)} titles found')
+#print(There are {len(data)} titles found')
 
 # Insert data
 if data:
     for item in data:      
-        cursor.execute("INSERT INTO news (title, note, content, tags, post_date, image) VALUES (?, ?, ?, ?, ?, ?)", 
+        cursor.execute("INSERT INTO trade (title, note, content, tags, post_date, image) VALUES (?, ?, ?, ?, ?, ?)", 
                        (item['title'], item['note'], item['content'], '', item['post_date'], item['image']))
         
     conn.commit()
